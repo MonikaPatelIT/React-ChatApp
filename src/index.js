@@ -1,15 +1,24 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import { createStore, applyMiddleware } from 'redux';
 
-import App from './components/app';
-import reducers from './reducers';
+import Message from './components/Message';
+import MessageList from './components/MessageList';
+import SendMessageForm from './components/SendMessageForm';
+import NewRoomForm from './components/NewRoomForm';
+import RoomList from './components/RoomList';
 
-const createStoreWithMiddleware = applyMiddleware()(createStore);
+
+const App = ()=> {
+	return(<div className="app">
+                <RoomList />
+                <MessageList />
+                <SendMessageForm />
+                <NewRoomForm />
+            </div>
+	);
+}
 
 ReactDOM.render(
-  <Provider store={createStoreWithMiddleware(reducers)}>
-    <App />
-  </Provider>
+      <App />
+  
   , document.querySelector('.container'));
