@@ -11,14 +11,23 @@ import { tokenUrl, instanceLocator } from './config'
 import Chatkit from '@pusher/chatkit'
 
 class App extends Component{
-	constructor() {
+	
+	 constructor() {
         super()
         this.state = {
-            messages: []
+			roomId : null,
+            messages: [],
+			joinableRooms:[],
+			joinRooms:[]
         }
-        this.sendMessage = this.sendMessage.bind(this)
+       // this.componentDieMount();
+		this.sendMessage = this.sendMessage.bind(this);
+		this.subscribeToRoom = this.subscribeToRoom.bind(this);
+		this.getRooms = this.getRooms.bind(this);
+		this.createRoom= this.createRoom.bind(this);
+		
     } 
-	componentDieMount(){
+	componentDidMount(){
 		const chatManager = new Chatkit.ChatManager({
 		instanceLocator,
 		userId:'MonikaP',
@@ -27,32 +36,76 @@ class App extends Component{
 		})
 		chatManager.connect()
 		.then(currentUser => { 
-			this.currentUser = currentUser
-			this.currentUser.subscribeToRoom({
-			roomId:17620316,
-			hooks:{
-				onNewMessage: message=>{
-					console.log('message.text: ', message.text);
-					this.setState({messages:[...this.state.messages, message]})
-				}
-			}
-		})})
+			this.currentUser = currentUser;
+			this.getRooms();
+			
+		})
+		.catch(erre=> console.log('error on connecting: ', erre));
 	}
 	
-	sendMessage(text) {
-        this.currentUser.sendMessage({
-            text,
-            roomId: 17620316
+	// get all rooms from the currentUser
+	getRooms(){
+		
+			this.currentUser.getJoinableRooms()
+			.then(joinableRooms =>{
+				this.setState({
+					joinableRooms,
+					joinRooms: this.currentUser.rooms
+				})
+				
+			})
+			.catch(erre=> console.log('error on joinable rooms: ', erre));
+			
+	}
+	//get the only subscribe room messages
+	 subscribeToRoom(roomId) {
+        this.setState({ messages: [] })
+        this.currentUser.subscribeToRoom({
+            roomId: roomId,
+            hooks: {
+                onNewMessage: message => {
+                    this.setState({
+                        messages: [...this.state.messages, message]
+                    })
+                }
+            }
         })
+        .then(room => {
+            this.setState({
+                roomId: room.id
+            })
+            this.getRooms()
+        })
+        .catch(err => console.log('error on subscribing to room: ', err))
     }
 	
+	// send Message to perticular room
+	sendMessage(text) {
+    this.currentUser.sendMessage({
+		text,
+            roomId: this.state.roomId
+	}).catch(err => {
+			console.log(`Error adding message to ${err}`)
+		})
+	    
+    }
+	
+	createRoom(name){
+		this.currentUser.createRoom({
+			name
+		})
+		.then(room=>{this.subscribeToRoom(room.id)})
+		.catch(err=> console.log('error creating room', err))
+		
+	}
 	
 	render(){
 		return(<div className="app">
-                <RoomList />
-                <MessageList messages={this.state.messages} />
-                <SendMessageForm sendMessage={this.sendMessage} />
-                <NewRoomForm />
+                <RoomList roomId = {this.state.roomId} subscribeToRoom={this.subscribeToRoom}
+				rooms={[...this.state.joinableRooms, ...this.state.joinRooms]} />
+                <MessageList roomId={this.state.roomId} messages={this.state.messages} />
+                <SendMessageForm IsDisabled={!this.state.roomId} sendMessage={this.sendMessage} />
+                <NewRoomForm createRoom = {this.createRoom} />
             </div>
 	);
 	}

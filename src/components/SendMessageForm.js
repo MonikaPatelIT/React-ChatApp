@@ -13,6 +13,7 @@ class SendMessageForm extends Component {
             <form 	onSubmit = {this.handleSubmit}
 					className="send-message-form">
                 <input
+					disabled ={this.props.IsDisabled}
 					onChange={this.handleChange}
 					value={this.state.message}
                     placeholder="SendMessageForm"
@@ -21,9 +22,11 @@ class SendMessageForm extends Component {
         )
     }
 	handleSubmit(e){
-		e.preventDefault();
-		console.log(this.state.message);
-		 this.props.sendMessage(this.state.message)
+		e.preventDefault()
+        this.props.sendMessage(this.state.message)
+        this.setState({
+            message: ''
+        })
 	}
 	handleChange(e){
 		//console.log(e.target.value);
